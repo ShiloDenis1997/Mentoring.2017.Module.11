@@ -1,14 +1,23 @@
 ﻿using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using MvcMusicStore.Models;
+using MvcMusicStore.PerformanceCounters;
+using PerformanceCounterHelper;
 
 namespace MvcMusicStore.Controllers
 {
     public class StoreController : Controller
     {
+        private readonly CounterHelper<ControllersCounters> _counterHelper;
         private readonly MusicStoreEntities _storeContext = new MusicStoreEntities();
+
+        public StoreController(CounterHelper<ControllersCounters> counterHelper)
+        {
+            _counterHelper = counterHelper;
+        }
 
         // GET: /Store/
         public async Task<ActionResult> Index()
@@ -19,7 +28,11 @@ namespace MvcMusicStore.Controllers
         // GET: /Store/Browse?genre=Disco
         public async Task<ActionResult> Browse(string genre)
         {
-            return View(await _storeContext.Genres.Include("Albums").SingleAsync(g => g.Name == genre));
+            var stopwatch = Stopwatch.StartNew();
+            var resultView = View(await _storeContext.Genres.Include("Albums").SingleAsync(g => g.Name == genre));
+            stopwatch.Stop();
+            _counterHelper.IncrementBy(ControllersCounters.ProcessingBrowseRequestAverageTime, stopwatch.ElapsedTicks);
+            return resultView;
         }
 
         public async Task<ActionResult> Details(int id)

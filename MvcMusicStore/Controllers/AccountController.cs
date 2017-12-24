@@ -5,12 +5,16 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin.Security;
 using MvcMusicStore.Models;
+using MvcMusicStore.PerformanceCounters;
+using PerformanceCounterHelper;
 
 namespace MvcMusicStore.Controllers
 {
     [Authorize]
     public class AccountController : Controller
     {
+        private readonly CounterHelper<ControllersCounters> _counterHelper;
+
         public enum ManageMessageId
         {
             ChangePasswordSuccess,
@@ -23,13 +27,16 @@ namespace MvcMusicStore.Controllers
 
         private UserManager<ApplicationUser> _userManager;
 
-        public AccountController()
-            : this(new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext())))
+        public AccountController(CounterHelper<ControllersCounters> counterHelper)
+            : this(counterHelper,
+                new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext())))
         {
+            
         }
 
-        public AccountController(UserManager<ApplicationUser> userManager)
+        public AccountController(CounterHelper<ControllersCounters> counterHelper, UserManager<ApplicationUser> userManager)
         {
+            _counterHelper = counterHelper;
             _userManager = userManager;
         }
 
@@ -71,7 +78,7 @@ namespace MvcMusicStore.Controllers
                 if (user != null)
                 {
                     await SignInAsync(user, model.RememberMe);
-
+                    _counterHelper.Increment(ControllersCounters.SuccessLogInsCounter);
                     return RedirectToLocal(returnUrl);
                 }
 
@@ -318,7 +325,7 @@ namespace MvcMusicStore.Controllers
         public ActionResult LogOff()
         {
             AuthenticationManager.SignOut();
-
+            _counterHelper.Increment(ControllersCounters.SuccessLogOffsCounter);
             return RedirectToAction("Index", "Home");
         }
 
