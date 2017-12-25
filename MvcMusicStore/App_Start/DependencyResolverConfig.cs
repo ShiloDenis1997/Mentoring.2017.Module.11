@@ -1,7 +1,7 @@
 ﻿using System.Web.Mvc;
 using Autofac;
 using Autofac.Integration.Mvc;
-using MvcMusicStore.Controllers;
+using MusicStore.Infrastructure;
 using MvcMusicStore.PerformanceCounters;
 using PerformanceCounterHelper;
 
@@ -21,6 +21,7 @@ namespace MvcMusicStore
         private static void ConfigureBindings(ContainerBuilder builder)
         {
             builder.Register(c => PerformanceHelper.CreateCounterHelper<ControllersCounters>()).SingleInstance().As<CounterHelper<ControllersCounters>>();
+            builder.RegisterType<Logger>().As<ILogger>();
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin.Security;
+using MusicStore.Infrastructure;
 using MvcMusicStore.Models;
 using MvcMusicStore.PerformanceCounters;
 using PerformanceCounterHelper;
@@ -14,6 +15,7 @@ namespace MvcMusicStore.Controllers
     public class AccountController : Controller
     {
         private readonly CounterHelper<ControllersCounters> _counterHelper;
+        private readonly ILogger _logger;
 
         public enum ManageMessageId
         {
@@ -27,17 +29,19 @@ namespace MvcMusicStore.Controllers
 
         private UserManager<ApplicationUser> _userManager;
 
-        public AccountController(CounterHelper<ControllersCounters> counterHelper)
-            : this(counterHelper,
+        public AccountController(CounterHelper<ControllersCounters> counterHelper, ILogger logger)
+            : this(counterHelper, logger,
                 new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext())))
         {
             
         }
 
-        public AccountController(CounterHelper<ControllersCounters> counterHelper, UserManager<ApplicationUser> userManager)
+        public AccountController(CounterHelper<ControllersCounters> counterHelper, ILogger logger, UserManager<ApplicationUser> userManager)
         {
             _counterHelper = counterHelper;
+            _logger = logger;
             _userManager = userManager;
+            _logger.Info("AccountController created");
         }
 
         private IAuthenticationManager AuthenticationManager
@@ -72,19 +76,23 @@ namespace MvcMusicStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
+            _logger.Trace("AccountController Login Post method started");
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindAsync(model.UserName, model.Password);
                 if (user != null)
                 {
+                    _logger.Debug($"Founded user {user.UserName}");
                     await SignInAsync(user, model.RememberMe);
                     _counterHelper.Increment(ControllersCounters.SuccessLogInsCounter);
+                    _logger.Trace("AccountController Login Post method finished");
                     return RedirectToLocal(returnUrl);
                 }
 
                 ModelState.AddModelError("", "Invalid username or password.");
             }
 
+            _logger.Trace("AccountController Login Post method finished");
             return View(model);
         }
 
