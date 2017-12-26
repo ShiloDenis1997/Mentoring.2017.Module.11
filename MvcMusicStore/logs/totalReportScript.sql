@@ -1,6 +1,15 @@
 SELECT 
-	TRIM(SUBSTR(text, 25, 5)) AS [Log_levels], 
-	COUNT([Index]) AS [Total_Count]
+    TRIM(SUBSTR(text, 25, 5)) AS [Log_levels], 
+    COUNT([Index]) AS [Total_Count]
 INTO Report.csv
-FROM 'D:\Work\Learning\epam\mentoringD1D2\solutions\Mentoring.2017.Module.11\Task\MvcMusicStore\logs\2017-12-25_summary.log' 
+FROM %file%
+WHERE (CASE TRIM(SUBSTR(text, 25, 5)) 
+        WHEN 'ERROR' THEN 1 
+        WHEN 'DEBUG' THEN 1
+        WHEN 'TRACE' THEN 1
+        WHEN 'FATAL' THEN 1
+        WHEN 'INFO' THEN 1
+        WHEN 'WARN' THEN 1
+        ELSE 2
+        END = 1)
 GROUP BY TRIM(SUBSTR(text, 25, 5))
